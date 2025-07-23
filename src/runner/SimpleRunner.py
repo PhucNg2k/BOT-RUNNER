@@ -1,3 +1,4 @@
+import time
 from .Loader import Loader
 from .Runner import Runner
 from ..worker.Worker import Worker
@@ -23,11 +24,19 @@ class SimpleRunner(Runner):
             return "good"
         return "bad"
         
-    def run_bot_loop():
-        pass
+    def run_bot_loop(self, interval=60):
+        print("Starting bot loop. Press Ctrl+C to stop.")
+        self.running = True
+        while self.running:
+            try:
+                result = self.worker.execute()
+                print(f"[Runner] Execution result: {result}")
+            except Exception as e:
+                print(f"[Runner] Error during execution: {e}")
+            time.sleep(interval)
 
 if __name__ == '__main__':
     runner = SimpleRunner(bot_path="src.bots.SimpleBot", target_platform="Binance")
     runner.prepare_worker()
     print(runner.test_worker_integration())
-    #runner.run_bot_loop()
+    runner.run_bot_loop(interval=15)

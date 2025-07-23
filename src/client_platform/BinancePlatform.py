@@ -16,6 +16,7 @@ import os
 import logging
 from dataclasses import dataclass
 
+
 from .BasePlatform import BasePlatform
 
 logger = logging.getLogger(__name__)
@@ -69,7 +70,7 @@ class BinancePlatform(BasePlatform):
         query_string = '&'.join([f"{key}={value}" for key, value in sorted_params])
         
         signature = hmac.new(
-            self.api_secret.encode('utf-8'),
+            self.secret_key.encode('utf-8'),
             query_string.encode('utf-8'),
             hashlib.sha256
         ).hexdigest()
@@ -99,7 +100,7 @@ class BinancePlatform(BasePlatform):
             
             # Generate signature
             signature = hmac.new(
-                self.api_secret.encode('utf-8'),
+                self.secret_key.encode('utf-8'),
                 query_string.encode('utf-8'),
                 hashlib.sha256
             ).hexdigest()
@@ -311,7 +312,7 @@ class BinancePlatform(BasePlatform):
             }
             
             response = self._make_request("POST", "/api/v3/order", params, signed=True)
-            
+            return response
             return OrderInfo(
                 order_id=response['orderId'],
                 client_order_id=response['clientOrderId'],
@@ -447,6 +448,34 @@ class BinancePlatform(BasePlatform):
             logger.error(f"Failed to get klines: {e}")
             raise
 
+    def fetch_data(self):
+        # Example: fetch latest price for a symbol
+        return {"symbol": "BTCUSDT", "price": self.get_current_price("BTCUSDT")}
+
+    def send_signal(self, signal):
+        action = signal.get("action")
+        symbol = signal.get("symbol", "BTCUSDT")
+        quantity = "0.001"  # You may want to make this dynamic
+        if action == "buy":
+            return self.create_market_order(symbol, "BUY", quantity)
+        elif action == "sell":
+            return self.create_market_order(symbol, "SELL", quantity)
+        else:
+            print(f"No action taken for signal: {signal}")
+            return None
+        
+    def get_allOrders(self, symbol: str):
+        """Get current price for symbol"""
+        try:
+            response = self._make_request("GET", "/api/v3/allOrders", {
+                'symbol': symbol
+            },signed=True)
+            return response
+        except Exception as e:
+            logger.error(f"Failed to get allOrders for {symbol}: {e}")
+            raise
+        
+
 def validate_binance_credentials(api_key: str, api_secret: str, testnet: bool = True) -> Tuple[bool, str]:
     """Validate Binance API credentials"""
     try:
@@ -472,5 +501,11 @@ def validate_binance_credentials(api_key: str, api_secret: str, testnet: bool = 
     
 
 if __name__ == '__main__':
+    import json
     platform = BinancePlatform()
-    print(platform.get_current_price('BTCUSDT'))
+    symbol = 'BTCUSDT'
+    
+    res = platform.get_allOrders(symbol=symbol)
+    with open('orders.json', 'w') as f:
+        json.dump(res, f, indent=2)
+    print(res)

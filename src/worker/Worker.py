@@ -8,11 +8,12 @@ class Worker:
 
     def execute(self):
         data = self.platform.fetch_data()
-        signal = self.bot.generate_signal(data)
-        self.platform.send_signal(signal)
+        signal = self.bot.generate_action()
+        result = self.platform.send_signal(signal)
+        return result
     
     def test_integration(self):
-        payload = self.bot.generate_signal()
+        payload = self.bot.generate_signal({})
         result = self.platform._make_request("GET", "/api/v3/ticker/price", payload)
         return result
 

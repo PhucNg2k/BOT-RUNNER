@@ -4,3 +4,11 @@
 basic design:  check
 implement platform: doing
 implement Runner + Docker
+
+
+
+1. Separation of Concerns
+Runner: Orchestrates the lifecycle and loop, but doesn’t care about trading details.
+Worker: Knows how to run a bot on a platform, encapsulating the logic of “get data → get signal → act.”
+Bot: Only knows how to generate a signal.
+Platform: Only knows how to interact with the exchange.

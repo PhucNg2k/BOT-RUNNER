@@ -12,7 +12,7 @@ class SimpleBot(BaseBot):
             "confidence": 0.85
         }
 
-    def generate_signal(self):
+    def generate_signal(self, data):
         return {
             "symbol": "BTCUSDT",
         }
