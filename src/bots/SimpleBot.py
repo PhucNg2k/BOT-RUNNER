@@ -1,13 +1,18 @@
-from BaseBot import BaseBot
+from .BaseBot import BaseBot
 
 class SimpleBot(BaseBot):
     def __init__(self):
         pass
     
-    def generate_signal(self, df):
+    def generate_action(self):
         # Ignore df, return dummy signal for testing
         return {
             "action": "buy",
             "symbol": "BTCUSDT",
             "confidence": 0.85
+        }
+
+    def generate_signal(self):
+        return {
+            "symbol": "BTCUSDT",
         }

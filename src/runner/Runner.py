@@ -1,17 +1,14 @@
 from abc import ABC, abstractmethod
-from worker import Worker
+from ..worker.Worker import Worker
 
 class Runner(ABC):
     def __init__(self):
         self.worker = None
         self.running = False
 
-    @abstractmethod
-    def prepare_config(self, bot_path: str, target_platform: str):
-        pass  # Implementation in subclass
 
     @abstractmethod
-    def prepar_worker(self):
+    def prepare_worker(self):
         pass 
 
     def test_worker_integration(self):
