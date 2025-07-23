@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from ..worker.Worker import Worker
+from worker.Worker import Worker
 
 class Runner(ABC):
     def __init__(self):

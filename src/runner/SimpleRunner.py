@@ -1,12 +1,12 @@
 import time
-from .Loader import Loader
-from .Runner import Runner
-from ..worker.Worker import Worker
-from ..client_platform.BinancePlatform import BinancePlatform
+from runner.Loader import Loader
+from runner.Runner import Runner
+from worker.Worker import Worker
+from client_platform.BinancePlatform import BinancePlatform
 
 class SimpleRunner(Runner):
     platform_map = {
-        "Binance": BinancePlatform,
+        "BINANCE": BinancePlatform,
     }
     
     def __init__(self, bot_path, target_platform):

@@ -1,5 +1,5 @@
-from ..bots.SimpleBot import SimpleBot
-from ..client_platform.BinancePlatform import BinancePlatform
+from bots.SimpleBot import SimpleBot
+from client_platform.BinancePlatform import BinancePlatform
 
 class Worker:
     def __init__(self, bot_class, platform_class):

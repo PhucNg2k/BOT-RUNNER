@@ -2,42 +2,55 @@ import docker
 import uuid
 import os
 
+def load_env_file(env_path):
+    env_dict = {}
+    if os.path.exists(env_path):
+        with open(env_path) as f:
+            for line in f:
+                if line.strip() and not line.startswith('#'):
+                    key, value = line.strip().split('=', 1)
+                    env_dict[key] = value
+    return env_dict
+
 class RunnerManager:
     docker_client = docker.from_env()
     container_prefix = "bot_runner_"
     active_containers = {}  # Optional mapping: runner_id -> container_name
 
     @staticmethod
-    def create_runner(bot_path: str, platform_name: str, image_name: str = "bot-runner:latest") -> str:
-        runner_id = str(uuid.uuid4())
+    def create_runner(user_id: str, bot_filename: str, platform_name: str, image_name: str = "bot-runner:latest") -> str:
+
+        user_dir_host = os.path.abspath(f"user-bots/{user_id}")  # Local path
+        runner_id = f"{uuid.uuid4().hex[:8]}"
         container_name = f"{RunnerManager.container_prefix}{runner_id}"
-
-        abs_bot_path = os.path.abspath(bot_path)
-        #bot_dir = os.path.dirname(abs_bot_path) # host-side
-        bot_dir = os.path.abspath("../../user-bots")
-        bot_file = os.path.basename(abs_bot_path)
-
+        
+        user_dir_container = "/app/user_bots"
+        env_file_path = os.path.join(user_dir_host, ".env")
+        
+        # Load .env file and merge with required environment variables
+        user_env = load_env_file(env_file_path)
+        user_env.update({
+            "BOT_PATH": f"{user_dir_container}/{bot_filename}",
+            "PLATFORM_NAME": platform_name
+        })
         try:
             RunnerManager.docker_client.containers.run(
                 image=image_name,
                 name=container_name,
                 detach=True,
-                environment={
-                    "BOT_PATH": f"/app/bots/{bot_file}",
-                    "PLATFORM_NAME": platform_name
-                },
-                volumes={ # bind-mount local bot folder into container for runtime access
-                    bot_dir: {  # -> server local folder
-                        "bind": "/app/bots", # this is the path *inside* the container
-                        "mode": "ro" # read-only to protect host files
+                volumes={
+                    user_dir_host: {
+                        "bind": user_dir_container,
+                        "mode": "ro"
                     }
                 },
-                restart_policy={"Name": "on-failure"}  # Optional: add resilience
+                environment=user_env,
+                #restart_policy={"Name": "on-failure"}  # Optional: add resilience
             )
             
             # Just store container name, not the container object
             RunnerManager.active_containers[runner_id] = container_name
-            return runner_id
+            return container_name
         
         except Exception as e:
             raise RuntimeError(f"Failed to run bot container: {e}")
@@ -67,3 +80,13 @@ class RunnerManager:
             return "not_found"
         except Exception as e:
             return f"error: {e}"
+
+
+
+if __name__ == "__main__":
+    user_id = 'user_1'
+    bot_filename = 'SimpleBot.py'
+    platform_name = 'BINANCE'
+
+    container_id = RunnerManager.create_runner(user_id, bot_filename, platform_name)
+    print(f"Runner container created: {container_id}")

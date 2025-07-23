@@ -1,4 +1,4 @@
-from .BaseBot import BaseBot
+from bots.BaseBot import BaseBot
 
 class SimpleBot(BaseBot):
     def __init__(self):

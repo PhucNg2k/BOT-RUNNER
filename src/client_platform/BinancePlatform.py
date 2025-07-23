@@ -17,7 +17,7 @@ import logging
 from dataclasses import dataclass
 
 
-from .BasePlatform import BasePlatform
+from client_platform.BasePlatform import BasePlatform
 
 logger = logging.getLogger(__name__)
 
