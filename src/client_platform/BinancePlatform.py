@@ -16,8 +16,7 @@ import os
 import logging
 from dataclasses import dataclass
 
-
-from client_platform.BasePlatform import BasePlatform
+from .BasePlatform import BasePlatform
 
 logger = logging.getLogger(__name__)
 
@@ -52,10 +51,10 @@ class BinancePlatform(BasePlatform):
             raise ValueError("Missing Binance credentials in environment.")
        
         # API endpoints
-        if testnet:
-            self.base_url = "https://testnet.binance.vision"
-        else:
-            self.base_url = "https://api.binance.com"
+        #if testnet:
+        self.base_url = "https://testnet.binance.vision"
+        #else:
+        #self.base_url = "https://api.binance.com"
         
         self.session = requests.Session()
         self.session.headers.update({
@@ -310,9 +309,8 @@ class BinancePlatform(BasePlatform):
                 'type': 'MARKET',
                 'quantity': quantity
             }
-            
+            print("MAKING MARKET ORDER:\n")
             response = self._make_request("POST", "/api/v3/order", params, signed=True)
-            return response
             return OrderInfo(
                 order_id=response['orderId'],
                 client_order_id=response['clientOrderId'],
@@ -456,10 +454,8 @@ class BinancePlatform(BasePlatform):
         action = signal.get("action")
         symbol = signal.get("symbol", "BTCUSDT")
         quantity = "0.001"  # You may want to make this dynamic
-        if action == "buy":
-            return self.create_market_order(symbol, "BUY", quantity)
-        elif action == "sell":
-            return self.create_market_order(symbol, "SELL", quantity)
+        if action:
+            return self.create_market_order(symbol, action.upper(), quantity)
         else:
             print(f"No action taken for signal: {signal}")
             return None
@@ -475,30 +471,30 @@ class BinancePlatform(BasePlatform):
             logger.error(f"Failed to get allOrders for {symbol}: {e}")
             raise
         
-
-def validate_binance_credentials(api_key: str, api_secret: str, testnet: bool = True) -> Tuple[bool, str]:
-    """Validate Binance API credentials"""
-    try:
-        client = BinancePlatform(testnet) # Pass testnet to the constructor
+    @staticmethod
+    def validate_binance_credentials(testnet: bool = True) -> Tuple[bool, str]:
+        """Validate Binance API credentials"""
+        try:
+            client = BinancePlatform(testnet) # Pass testnet to the constructor
+            
+            # Test connectivity
+            if not client.test_connectivity():
+                return False, "Failed to connect to Binance API"
+            
+            # Test account access
+            account_info = client.get_account_info()
+            if not account_info:
+                return False, "Failed to get account information"
+            
+            # Check trading permissions
+            if not account_info.get('canTrade', False):
+                return False, "Account does not have trading permissions"
+            
+            return True, "Credentials validated successfully"
+            
+        except Exception as e:
+            return False, f"Validation failed: {str(e)}" 
         
-        # Test connectivity
-        if not client.test_connectivity():
-            return False, "Failed to connect to Binance API"
-        
-        # Test account access
-        account_info = client.get_account_info()
-        if not account_info:
-            return False, "Failed to get account information"
-        
-        # Check trading permissions
-        if not account_info.get('canTrade', False):
-            return False, "Account does not have trading permissions"
-        
-        return True, "Credentials validated successfully"
-        
-    except Exception as e:
-        return False, f"Validation failed: {str(e)}" 
-    
 
 if __name__ == '__main__':
     import json
@@ -509,3 +505,6 @@ if __name__ == '__main__':
     with open('orders.json', 'w') as f:
         json.dump(res, f, indent=2)
     print(res)
+    
+    #res = BinancePlatform.validate_binance_credentials()
+    #print(res[0])

@@ -1,16 +1,8 @@
 import docker
 import uuid
 import os
-
-def load_env_file(env_path):
-    env_dict = {}
-    if os.path.exists(env_path):
-        with open(env_path) as f:
-            for line in f:
-                if line.strip() and not line.startswith('#'):
-                    key, value = line.strip().split('=', 1)
-                    env_dict[key] = value
-    return env_dict
+from dotenv import dotenv_values
+import subprocess
 
 class RunnerManager:
     docker_client = docker.from_env()
@@ -28,13 +20,13 @@ class RunnerManager:
         env_file_path = os.path.join(user_dir_host, ".env")
         
         # Load .env file and merge with required environment variables
-        user_env = load_env_file(env_file_path)
+        user_env = dotenv_values(env_file_path)
         user_env.update({
             "BOT_PATH": f"{user_dir_container}/{bot_filename}",
             "PLATFORM_NAME": platform_name
         })
         try:
-            RunnerManager.docker_client.containers.run(
+            container = RunnerManager.docker_client.containers.run(
                 image=image_name,
                 name=container_name,
                 detach=True,
@@ -50,7 +42,7 @@ class RunnerManager:
             
             # Just store container name, not the container object
             RunnerManager.active_containers[runner_id] = container_name
-            return container_name
+            return container.id
         
         except Exception as e:
             raise RuntimeError(f"Failed to run bot container: {e}")
@@ -84,9 +76,13 @@ class RunnerManager:
 
 
 if __name__ == "__main__":
-    user_id = 'user_1'
     bot_filename = 'SimpleBot.py'
-    platform_name = 'BINANCE'
+    platform_name = 'Binance'
 
+    user_id = 'user_1'
+    container_id = RunnerManager.create_runner(user_id, bot_filename, platform_name)
+    print(f"Runner container created: {container_id}")
+        
+    user_id = 'user_2'
     container_id = RunnerManager.create_runner(user_id, bot_filename, platform_name)
     print(f"Runner container created: {container_id}")
