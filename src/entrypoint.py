@@ -10,7 +10,6 @@ def main():
     
     try:
         runner.prepare_worker()
-
         connection_status = runner.test_worker_integration()
         if connection_status:
             print("\nBOT IS WORKING!\n", flush=True)
