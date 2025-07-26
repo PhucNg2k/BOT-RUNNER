@@ -79,6 +79,44 @@ class RunnerManager:
         # Returns a dict of runner_id -> container_name
         return {}
 
+    @staticmethod
+    def start_runner(runner_id: str) -> bool:
+        """Start a stopped container by runner_id"""
+        container_name = f"{RunnerManager.container_prefix}{runner_id}"
+        try:
+            container = RunnerManager.docker_client.containers.get(container_name)
+            container.start()
+            return True
+        except docker.errors.NotFound:
+            return False
+        except Exception as e:
+            raise RuntimeError(f"Failed to start container {container_name}: {e}")
+
+    @staticmethod
+    def stop_runner(runner_id: str) -> bool:
+        """Stop a running container by runner_id"""
+        container_name = f"{RunnerManager.container_prefix}{runner_id}"
+        try:
+            container = RunnerManager.docker_client.containers.get(container_name)
+            container.stop()
+            return True
+        except docker.errors.NotFound:
+            return False
+        except Exception as e:
+            raise RuntimeError(f"Failed to stop container {container_name}: {e}")
+
+    @staticmethod
+    def inspect_runner(runner_id: str) -> dict:
+        """Inspect a container by runner_id to get detailed information"""
+        container_name = f"{RunnerManager.container_prefix}{runner_id}"
+        try:
+            container = RunnerManager.docker_client.containers.get(container_name)
+            return container.attrs  # Returns detailed container attributes
+        except docker.errors.NotFound:
+            raise RuntimeError(f"Container {container_name} not found")
+        except Exception as e:
+            raise RuntimeError(f"Failed to inspect container {container_name}: {e}")
+
 
 if __name__ == "__main__":
     bot_filename = 'SimpleBot.py'
